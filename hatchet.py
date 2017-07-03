@@ -1,8 +1,9 @@
 from array_helper import pretty_print as pretty_print
 from array_helper import create_2d_array as create_2d_array
 from array_helper import rotate as rotate
+import numpy as np
 
-door_positions = []
+FLOOR_ARRAY = []
 
 tile_array1 = [
     [2, 2, 2, 2, 2],
@@ -26,6 +27,31 @@ tile_array2 = [
 ]
 
 
+class Tile:
+    doors = []
+    door_positions = []
+    tile_array = []
+
+    def __init__(self, tile_array):
+        self.tile_array = tile_array
+
+    def __str__(self):
+        return str(np.matrix(self.tile_array))
+
+    def stamp(self, offset):
+        x = offset[0]
+        y = offset[1] - 1 #todo: why?
+        # total_size = tile_array[0].length + tile_array[1].length
+        tile_array = self.tile_array
+        for i in range(0, len(tile_array)):
+            for j in range(len(tile_array[0])):
+                FLOOR_ARRAY[i + x][j + y] = tile_array[i][j]
+
+                # square is a door. Add it do the available door list
+                if tile_array[i][j] is 3:
+                    self.door_positions.append((i + x, j + y))
+
+
 class Door:
     origin = (0, 0)
     width = 0
@@ -38,47 +64,7 @@ class Door:
         return str(self.origin) + " , " + str(self.width)
 
 
-def stamp_tile(tile_array, offset, floor_array):
-    x = offset[0]
-    y = offset[1]
-    # total_size = tile_array[0].length + tile_array[1].length
-    for i in range(0, len(tile_array)):
-        for j in range(len(tile_array[0])):
-            floor_array[i + x][j + y] = tile_array[i][j]
-
-            # floor tile (1) should not be neighbor to another floor tile
-
-
-            # tile is a door. Add it do the available door list
-            if tile_array[i][j] is 3:
-                door_positions.append((i + x, j + y))
-
-    return floor_array
-
-
-def stamp_tile2(tile_array, floor_door, floor_array, doors):
-    x = floor_door.origin[0]
-    y = floor_door.origin[1] - 1  # todo: why?
-    # total_size = tile_array[0].length + tile_array[1].length
-    for i in range(0, len(tile_array)):
-        for j in range(len(tile_array[0])):
-            this_tile_point = tile_array[i][j]
-            floor_array[i + x][j + y] = this_tile_point
-
-            # check_stamp()
-            # floor tile (1) should not be neighbor to another floor tile
-
-            # tile is a door. Add it do the available door list
-            if this_tile_point is 3:
-                door_positions.append((i + x, j + y))
-
-            if this_tile_point is 3 and floor_array[i + x][j + y] is 3 and len(doors) > 0:
-                floor_array[i + x][j + y] = 4
-
-    return floor_array
-
-
-def find_door_width():
+def find_door_width(door_positions):
     size = 0
     horizontal_doors = []
     horizontal_one_width_doors = []
@@ -106,8 +92,6 @@ def find_door_width():
                 size = 0
             else:
                 horizontal_one_width_doors.append(Door(this_door, 1))
-
-    # door_positions.sort(mysortfunction)
 
     vertical_doors = []
     vertical_one_width_doors = []
@@ -147,26 +131,25 @@ def find_door_width():
 
 def main():
     print('Hello World')
-    pretty_print(tile_array1)
-    pretty_print(tile_array2)
 
-    floor_array = create_2d_array(30, 30)
-    pretty_print(floor_array)
+    global FLOOR_ARRAY
+    FLOOR_ARRAY = create_2d_array(30, 30)
 
-    pretty_print(tile_array1)
+    tile_1 = Tile(tile_array1)
+    str(tile_1)
 
-    floor_array = stamp_tile(tile_array1, (7, 8), floor_array)
+    tile_2 = Tile(tile_array2)
 
-    print(door_positions)
+    tile_1.stamp((7, 8))
 
-    doors = find_door_width()
+    doors = find_door_width(tile_1.door_positions)
     for door in doors:
         print(str(door))
 
     # floor_array = stamp_tile2(rotate(rotate(tile_array1)), doors[0], floor_array)
-    floor_array = stamp_tile2(tile_array1, doors[0], floor_array, doors)
+    tile_2.stamp(doors[0].origin)
 
-    pretty_print(floor_array)
+    pretty_print(FLOOR_ARRAY)
 
     print('DONE')
 
