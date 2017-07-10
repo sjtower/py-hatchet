@@ -38,6 +38,13 @@ tile_array4 = [
     [2, 3, 3, 3, 3, 2]
 ]
 
+tile_array5 = [
+    [2, 2, 2, 2, 2],
+    [2, 1, 1, 1, 2],
+    [2, 1, 1, 1, 2],
+    [2, 3, 3, 3, 2]
+]
+
 tiles = [tile_array1, tile_array2, tile_array3]
 
 
@@ -59,23 +66,41 @@ class Tile:
         self.init_doors()
 
     def __str__(self):
-        return str(np.matrix(self.tile_array))
+        tile_print = str(np.matrix(self.tile_array))
+        tile_print += "\nDoors: "
+        for door in self.doors:
+            tile_print += (str(door))
+        return tile_print
 
-    def check_fit(self, other_tile):
+    def can_fit(self, other):
         # check for same size door
         same_width_door_available = False
         for door in self.doors:
-            if door in other_tile.doors:
+            if door in other.doors:
                 same_width_door_available = True
                 break
 
         if not same_width_door_available:
+            print("No same-width doors available. Skipping tile.")
             return False
 
-    def attach_doors(self, tile, source_door, tile_door):
-        x = tile_door.origin[0] - source_door.origin[0] + tile.floor_offset[0]
-        y = tile_door.origin[1] - source_door.origin[1] + tile.floor_offset[1]
+        return True
+
+    def find_fit(self, other):
+
+        if not self.can_fit(other):
+            print("Cannot find fit - no same-width doors.")
+            return False
+
+    def attach_doors(self, other, source_door, other_door):
+        x = other_door.origin[0] - source_door.origin[0] + other.floor_offset[0]
+        y = other_door.origin[1] - source_door.origin[1] + other.floor_offset[1]
         self.stamp((x, y))
+
+    def test_attach_doors(self, other, source_door, other_door):
+        x = other_door.origin[0] - source_door.origin[0] + other.floor_offset[0]
+        y = other_door.origin[1] - source_door.origin[1] + other.floor_offset[1]
+        return self.test_stamp((x, y))
 
     def stamp(self, offset):
         self.floor_offset = offset
@@ -87,6 +112,23 @@ class Tile:
         for i in range(0, len(tile_array)):
             for j in range(len(tile_array[0])):
                 floor.floor_array[i + x][j + y] = tile_array[i][j]
+
+    def test_stamp(self, offset):
+        tile_array = self.tile_array
+        global floor  # todo: figure out this temp array copy
+        temp_floor = list(floor.floor_array)
+        x = offset[0]
+        y = offset[1]
+        for i in range(0, len(tile_array)):
+            for j in range(len(tile_array[0])):
+                if temp_floor[i + x][j + y] is 1:
+                    temp_floor[i + x][j + y] = 9
+                    print("Test stamp results in collision. Skipping.")
+                    pretty_print(temp_floor)
+                    return False
+                temp_floor[i + x][j + y] = tile_array[i][j]
+
+        return True
 
     def init_doors(self):
         door_positions = []
@@ -191,15 +233,24 @@ def main():
     tile_3 = Tile(tile_array3)
     str(tile_3)
 
-    tile_2.stamp((10, 10))
+    tile_4 = Tile(tile_array4)
+    str(tile_4)
 
-    for door in tile_2.doors:
-        print(str(door))
+    tile_5 = Tile(tile_array5)
+    str(tile_5)
 
-    tile_3.attach_doors(tile_2, tile_3.doors[0], tile_2.doors[0])
+    tile_1.stamp((10, 10))
 
-    # floor_array = stamp_tile2(rotate(rotate(tile_array1)), doors[0], floor_array)
-    # tile_2.stamp(doors[0].origin)
+    if tile_5.can_fit(tile_1):
+        print("Tiles fit. continuing")
+
+        while not tile_5.test_attach_doors(tile_1, tile_5.doors[0], tile_1.doors[0]):
+            print('rotating')  # todo: flip
+            tile_5.tile_array = rotate(tile_5.tile_array) # todo: move into Tile class
+            tile_5.init_doors()
+
+    print('attaching')
+    tile_5.attach_doors(tile_1, tile_5.doors[0], tile_1.doors[0])
 
     pretty_print(floor.floor_array)
 
