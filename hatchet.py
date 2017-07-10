@@ -3,8 +3,6 @@ from array_helper import create_2d_array as create_2d_array
 from array_helper import rotate as rotate
 import numpy as np
 
-FLOOR_ARRAY = []
-
 tile_array1 = [
     [2, 2, 2, 2, 2],
     [2, 1, 1, 1, 2],
@@ -27,29 +25,48 @@ tile_array2 = [
 ]
 
 
+class Floor:
+    floor_array = []
+    door_positions = []
+
+
+floor = Floor()
+
+
 class Tile:
     doors = []
-    door_positions = []
     tile_array = []
+    floor_offset = 0
 
     def __init__(self, tile_array):
         self.tile_array = tile_array
+        self.init_doors()
 
     def __str__(self):
         return str(np.matrix(self.tile_array))
 
     def stamp(self, offset):
+        self.floor_offset = offset
         x = offset[0]
-        y = offset[1] - 1 #todo: why?
+        y = offset[1]
         # total_size = tile_array[0].length + tile_array[1].length
+        tile_array = self.tile_array
+        global floor
+        for i in range(0, len(tile_array)):
+            for j in range(len(tile_array[0])):
+                floor.floor_array[i + x][j + y] = tile_array[i][j]
+
+    def init_doors(self):
+        door_positions = []
         tile_array = self.tile_array
         for i in range(0, len(tile_array)):
             for j in range(len(tile_array[0])):
-                FLOOR_ARRAY[i + x][j + y] = tile_array[i][j]
 
                 # square is a door. Add it do the available door list
                 if tile_array[i][j] is 3:
-                    self.door_positions.append((i + x, j + y))
+                    door_positions.append((i, j))
+
+        self.doors = find_doors(door_positions)
 
 
 class Door:
@@ -64,7 +81,7 @@ class Door:
         return str(self.origin) + " , " + str(self.width)
 
 
-def find_door_width(door_positions):
+def find_doors(door_positions):
     size = 0
     horizontal_doors = []
     horizontal_one_width_doors = []
@@ -77,21 +94,20 @@ def find_door_width(door_positions):
             next_door = door_positions[i + 1]
 
         this_door = door_positions[i]
-        if next_door is not None and this_door[0] == next_door[0] - 1 and this_door[1] == next_door[1]:
+        if next_door is not None and this_door[0] == next_door[0] and this_door[1] == next_door[1] - 1:
             size = size + 1
         else:
             # don't count 1 width doors
             if size > 0:
-                # first door, increase size by one
-
                 door_origin_position = door_positions[i - size]
-                # door_origin_position.width = size + 1
-
                 door = Door(door_origin_position, size + 1)
                 horizontal_doors.append(door)
                 size = 0
             else:
                 horizontal_one_width_doors.append(Door(this_door, 1))
+
+    # sort doors by y value
+    door_positions.sort(key=lambda tup: tup[1])
 
     vertical_doors = []
     vertical_one_width_doors = []
@@ -105,13 +121,11 @@ def find_door_width(door_positions):
             next_door = door_positions[j + 1]
 
         this_door = door_positions[j]
-        if next_door is not None and this_door[1] == next_door[1] - 1 and this_door[0] == next_door[0]:
+        if next_door is not None and this_door[1] == next_door[1] and this_door[0] == next_door[0] - 1:
             size = size + 1
         else:
             # don't count 1 width doors
             if size > 0:
-                # first door, increase size by one
-
                 door_origin_position = door_positions[j - size]
                 door = Door(door_origin_position, size + 1)
                 vertical_doors.append(door)
@@ -130,26 +144,28 @@ def find_door_width(door_positions):
 
 
 def main():
-    print('Hello World')
+    global floor
+    floor.floor_array = create_2d_array(30, 30)
 
-    global FLOOR_ARRAY
-    FLOOR_ARRAY = create_2d_array(30, 30)
+    tile_2 = Tile(tile_array2)
+    str(tile_2)
 
     tile_1 = Tile(tile_array1)
     str(tile_1)
 
-    tile_2 = Tile(tile_array2)
+    tile_2.stamp((10, 10))
 
-    tile_1.stamp((7, 8))
-
-    doors = find_door_width(tile_1.door_positions)
-    for door in doors:
+    for door in tile_2.doors:
         print(str(door))
 
-    # floor_array = stamp_tile2(rotate(rotate(tile_array1)), doors[0], floor_array)
-    tile_2.stamp(doors[0].origin)
+    stamp_spot_x = tile_2.doors[0].origin[0] - tile_1.doors[0].origin[0] + tile_2.floor_offset[0]
+    stamp_spot_y = tile_2.doors[0].origin[1] - tile_1.doors[0].origin[1] + tile_2.floor_offset[1]
+    tile_1.stamp((stamp_spot_x, stamp_spot_y))
 
-    pretty_print(FLOOR_ARRAY)
+    # floor_array = stamp_tile2(rotate(rotate(tile_array1)), doors[0], floor_array)
+    # tile_2.stamp(doors[0].origin)
+
+    pretty_print(floor.floor_array)
 
     print('DONE')
 
