@@ -24,6 +24,22 @@ tile_array2 = [
 
 ]
 
+tile_array3 = [
+    [2, 2, 2, 2],
+    [2, 1, 1, 2],
+    [2, 1, 1, 2],
+    [2, 3, 3, 2]
+]
+
+tile_array4 = [
+    [2, 2, 2, 2, 2, 2],
+    [2, 1, 1, 1, 1, 2],
+    [2, 1, 1, 1, 1, 2],
+    [2, 3, 3, 3, 3, 2]
+]
+
+tiles = [tile_array1, tile_array2, tile_array3]
+
 
 class Floor:
     floor_array = []
@@ -44,6 +60,22 @@ class Tile:
 
     def __str__(self):
         return str(np.matrix(self.tile_array))
+
+    def check_fit(self, other_tile):
+        # check for same size door
+        same_width_door_available = False
+        for door in self.doors:
+            if door in other_tile.doors:
+                same_width_door_available = True
+                break
+
+        if not same_width_door_available:
+            return False
+
+    def attach_doors(self, tile, source_door, tile_door):
+        x = tile_door.origin[0] - source_door.origin[0] + tile.floor_offset[0]
+        y = tile_door.origin[1] - source_door.origin[1] + tile.floor_offset[1]
+        self.stamp((x, y))
 
     def stamp(self, offset):
         self.floor_offset = offset
@@ -79,6 +111,9 @@ class Door:
 
     def __str__(self):
         return str(self.origin) + " , " + str(self.width)
+
+    def __eq__(self, other):
+        return self.width == other.width
 
 
 def find_doors(door_positions):
@@ -153,14 +188,15 @@ def main():
     tile_1 = Tile(tile_array1)
     str(tile_1)
 
+    tile_3 = Tile(tile_array3)
+    str(tile_3)
+
     tile_2.stamp((10, 10))
 
     for door in tile_2.doors:
         print(str(door))
 
-    stamp_spot_x = tile_2.doors[0].origin[0] - tile_1.doors[0].origin[0] + tile_2.floor_offset[0]
-    stamp_spot_y = tile_2.doors[0].origin[1] - tile_1.doors[0].origin[1] + tile_2.floor_offset[1]
-    tile_1.stamp((stamp_spot_x, stamp_spot_y))
+    tile_3.attach_doors(tile_2, tile_3.doors[0], tile_2.doors[0])
 
     # floor_array = stamp_tile2(rotate(rotate(tile_array1)), doors[0], floor_array)
     # tile_2.stamp(doors[0].origin)
