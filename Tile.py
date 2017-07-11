@@ -1,6 +1,9 @@
 import copy
+import random
 
 import numpy as np
+
+np.set_printoptions(threshold=np.nan, linewidth=np.nan)
 
 from array_helper import pretty_print as pretty_print
 from array_helper import rotate as rotate
@@ -29,6 +32,10 @@ class Tile:
         self.tile_array = rotate(self.tile_array)
         self.init_doors()
 
+    def rotate_randomly(self):
+        for i in range(0, random.randint(0, 3)):
+            self.tile_array = rotate(self.tile_array)
+
     def can_fit(self, other):
         # check for same size door
         same_width_door_available = False
@@ -49,7 +56,7 @@ class Tile:
             print("Cannot find fit - no same-width doors.")
             return False
 
-    #  todo: consider combining test and non-test methods
+    # todo: consider combining test and non-test methods
     def attach_doors(self, other, source_door, other_door):
         x = other_door.origin[0] - source_door.origin[0] + other.floor_offset[0]
         y = other_door.origin[1] - source_door.origin[1] + other.floor_offset[1]
@@ -62,6 +69,7 @@ class Tile:
 
     def stamp(self, offset):
         self.floor_offset = offset
+        self.floor.stamped_tiles.append(self)
         x = offset[0]
         y = offset[1]
         # total_size = tile_array[0].length + tile_array[1].length
@@ -77,10 +85,14 @@ class Tile:
         y = offset[1]
         for i in range(0, len(tile_array)):
             for j in range(len(tile_array[0])):
+                # todo: methodize these checks
+                if temp_floor[i + x][j + y] is 3 and tile_array[i][j] is not 3:
+                    print("Test stamp results in unmatched doors. Skipping.")
+                    return False
                 if temp_floor[i + x][j + y] is 1:
                     temp_floor[i + x][j + y] = 9
                     print("Test stamp results in collision. Skipping.")
-                    pretty_print(temp_floor)
+                    # pretty_print(temp_floor)
                     return False
                 temp_floor[i + x][j + y] = tile_array[i][j]
 

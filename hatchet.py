@@ -1,98 +1,75 @@
+import random
+
 from Tile import Tile
 from array_helper import create_2d_array as create_2d_array
 from array_helper import pretty_print as pretty_print
-
-tile_array1 = [
-    [2, 2, 2, 2, 2],
-    [2, 1, 1, 1, 2],
-    [2, 1, 1, 1, 2],
-    [2, 3, 3, 3, 2]
-]
-
-tile_array2 = [
-    [2, 3, 3, 3, 2, 2, 3, 3, 2],
-    [2, 1, 1, 1, 1, 1, 1, 1, 2],
-    [2, 1, 1, 1, 1, 1, 1, 1, 2],
-    [2, 1, 1, 1, 1, 1, 1, 1, 3],
-    [2, 1, 1, 1, 1, 1, 1, 1, 3],
-    [3, 1, 1, 1, 1, 1, 1, 1, 3],
-    [3, 1, 1, 1, 1, 1, 1, 1, 3],
-    [2, 1, 1, 1, 1, 1, 1, 1, 2],
-    [2, 1, 1, 1, 1, 1, 1, 1, 3],
-    [2, 3, 3, 2, 2, 3, 2, 2, 2]
-
-]
-
-tile_array3 = [
-    [2, 2, 2, 2],
-    [2, 1, 1, 2],
-    [2, 1, 1, 2],
-    [2, 3, 3, 2]
-]
-
-tile_array4 = [
-    [2, 2, 2, 2, 2, 2],
-    [2, 1, 1, 1, 1, 2],
-    [2, 1, 1, 1, 1, 2],
-    [2, 3, 3, 3, 3, 2]
-]
-
-tile_array5 = [
-    [2, 2, 2, 2, 2],
-    [2, 1, 1, 1, 2],
-    [2, 1, 1, 1, 2],
-    [2, 3, 3, 3, 2]
-]
-
-tiles = [tile_array1, tile_array2, tile_array3]
+from input import input_tiles
 
 
 class Floor:
     floor_array = []
     door_positions = []
+    available_tiles = []
+    stamped_tiles = []
+
+    def add_tile(self, tile):
+        tile = Tile(tile, self)
+        self.available_tiles.append(tile)
 
 
 floor = Floor()
 
 
-# todo: list of available tiles
-#       start tile chosen at random and placed in center
-#       attempt to attach random tiles from list to start tile
-#       doors move to floor once stamped
+# todo: doors move to floor once stamped?
 def main():
     global floor
-    floor.floor_array = create_2d_array(30, 30)
+    floor.floor_array = create_2d_array(50, 50)
 
-    # todo: passing around floor like this is a smell. Floor has list of tiles? floor.make_tile?
-    tile_2 = Tile(tile_array2, floor)
-    str(tile_2)
+    for tile in input_tiles:
+        floor.add_tile(tile)
 
-    tile_1 = Tile(tile_array1, floor)
-    str(tile_1)
-
-    tile_3 = Tile(tile_array3, floor)
-    str(tile_3)
-
-    tile_4 = Tile(tile_array4, floor)
-    str(tile_4)
-
-    tile_5 = Tile(tile_array5, floor)
-    str(tile_5)
-
-    tile_1.stamp((10, 10))
-
-    if tile_5.can_fit(tile_1):
-        print("Tiles fit. continuing")
-
-        while not tile_5.test_attach_doors(tile_1, tile_5.doors[0], tile_1.doors[0]):
-            print('rotating')  # todo: flip
-            tile_5.rotate()
-
-    print('attaching')
-    tile_5.attach_doors(tile_1, tile_5.doors[0], tile_1.doors[0])
-
+    tiles = floor.available_tiles
+    start_tile = random.choice(tiles)
+    start_tile.stamp((20, 20))
     pretty_print(floor.floor_array)
 
+    for x in range(0, 128):
+
+        tile = random.choice(floor.available_tiles)
+        tile.rotate_randomly()  # todo: flip
+
+        target_tile = random.choice(floor.stamped_tiles)
+
+        if tile.can_fit(target_tile):
+            print("Tiles fit. continuing")
+
+            skip = False
+            i = j = rotations = 0
+            while not tile.test_attach_doors(target_tile, tile.doors[i], target_tile.doors[j]):
+                print('rotating')  # todo: flip
+                tile.rotate()
+                rotations += 1
+                if rotations >= 3:
+                    print("tried full 360 rotation - try another door")  # todo: log instead of print
+                    i += 1
+                    rotations = 0
+                    if len(tile.doors) is 1 or i is len(tile.doors) - 1:
+                        print("tried all source doors - try another target door")
+                        i = 0
+                        j += 1
+                        if len(target_tile.doors) is 1 or j is len(target_tile.doors) - 1:
+                            skip = True
+                            print("no tiles could fit - skipping")
+                            break  # should not be possible?
+                            # todo: clean this shit up - shouldn't need indexes just go thru each door list
+
+            if not skip:
+                #  todo: remove placed doors
+                print('attaching')
+                tile.attach_doors(target_tile, tile.doors[i], target_tile.doors[j])
+                pretty_print(floor.floor_array)
+
+    pretty_print(floor.floor_array)
     print('DONE')
 
 
