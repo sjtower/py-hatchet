@@ -1,7 +1,6 @@
-from array_helper import pretty_print as pretty_print
+from Tile import Tile
 from array_helper import create_2d_array as create_2d_array
-from array_helper import rotate as rotate
-import numpy as np
+from array_helper import pretty_print as pretty_print
 
 tile_array1 = [
     [2, 2, 2, 2, 2],
@@ -56,187 +55,28 @@ class Floor:
 floor = Floor()
 
 
-class Tile:
-    doors = []
-    tile_array = []
-    floor_offset = 0
-
-    def __init__(self, tile_array):
-        self.tile_array = tile_array
-        self.init_doors()
-
-    def __str__(self):
-        tile_print = str(np.matrix(self.tile_array))
-        tile_print += "\nDoors: "
-        for door in self.doors:
-            tile_print += (str(door))
-        return tile_print
-
-    def can_fit(self, other):
-        # check for same size door
-        same_width_door_available = False
-        for door in self.doors:
-            if door in other.doors:
-                same_width_door_available = True
-                break
-
-        if not same_width_door_available:
-            print("No same-width doors available. Skipping tile.")
-            return False
-
-        return True
-
-    def find_fit(self, other):
-
-        if not self.can_fit(other):
-            print("Cannot find fit - no same-width doors.")
-            return False
-
-    def attach_doors(self, other, source_door, other_door):
-        x = other_door.origin[0] - source_door.origin[0] + other.floor_offset[0]
-        y = other_door.origin[1] - source_door.origin[1] + other.floor_offset[1]
-        self.stamp((x, y))
-
-    def test_attach_doors(self, other, source_door, other_door):
-        x = other_door.origin[0] - source_door.origin[0] + other.floor_offset[0]
-        y = other_door.origin[1] - source_door.origin[1] + other.floor_offset[1]
-        return self.test_stamp((x, y))
-
-    def stamp(self, offset):
-        self.floor_offset = offset
-        x = offset[0]
-        y = offset[1]
-        # total_size = tile_array[0].length + tile_array[1].length
-        tile_array = self.tile_array
-        global floor
-        for i in range(0, len(tile_array)):
-            for j in range(len(tile_array[0])):
-                floor.floor_array[i + x][j + y] = tile_array[i][j]
-
-    def test_stamp(self, offset):
-        tile_array = self.tile_array
-        global floor  # todo: figure out this temp array copy
-        temp_floor = list(floor.floor_array)
-        x = offset[0]
-        y = offset[1]
-        for i in range(0, len(tile_array)):
-            for j in range(len(tile_array[0])):
-                if temp_floor[i + x][j + y] is 1:
-                    temp_floor[i + x][j + y] = 9
-                    print("Test stamp results in collision. Skipping.")
-                    pretty_print(temp_floor)
-                    return False
-                temp_floor[i + x][j + y] = tile_array[i][j]
-
-        return True
-
-    def init_doors(self):
-        door_positions = []
-        tile_array = self.tile_array
-        for i in range(0, len(tile_array)):
-            for j in range(len(tile_array[0])):
-
-                # square is a door. Add it do the available door list
-                if tile_array[i][j] is 3:
-                    door_positions.append((i, j))
-
-        self.doors = find_doors(door_positions)
-
-
-class Door:
-    origin = (0, 0)
-    width = 0
-
-    def __init__(self, origin, width):
-        self.origin = origin
-        self.width = width
-
-    def __str__(self):
-        return str(self.origin) + " , " + str(self.width)
-
-    def __eq__(self, other):
-        return self.width == other.width
-
-
-def find_doors(door_positions):
-    size = 0
-    horizontal_doors = []
-    horizontal_one_width_doors = []
-    # determine length of doors by getting count of matching y values
-    for i in range(0, len(door_positions)):
-        # continuous door is found
-        if i + 1 is len(door_positions):
-            next_door = None
-        else:
-            next_door = door_positions[i + 1]
-
-        this_door = door_positions[i]
-        if next_door is not None and this_door[0] == next_door[0] and this_door[1] == next_door[1] - 1:
-            size = size + 1
-        else:
-            # don't count 1 width doors
-            if size > 0:
-                door_origin_position = door_positions[i - size]
-                door = Door(door_origin_position, size + 1)
-                horizontal_doors.append(door)
-                size = 0
-            else:
-                horizontal_one_width_doors.append(Door(this_door, 1))
-
-    # sort doors by y value
-    door_positions.sort(key=lambda tup: tup[1])
-
-    vertical_doors = []
-    vertical_one_width_doors = []
-    size = 0
-    # determine length of doors by getting count of matching x values
-    for j in range(0, len(door_positions)):
-        # continuous door is found
-        if j + 1 == len(door_positions):
-            next_door = None
-        else:
-            next_door = door_positions[j + 1]
-
-        this_door = door_positions[j]
-        if next_door is not None and this_door[1] == next_door[1] and this_door[0] == next_door[0] - 1:
-            size = size + 1
-        else:
-            # don't count 1 width doors
-            if size > 0:
-                door_origin_position = door_positions[j - size]
-                door = Door(door_origin_position, size + 1)
-                vertical_doors.append(door)
-                size = 0
-            else:
-                vertical_one_width_doors.append(Door(this_door, 1))
-
-    one_width_doors = []
-    for k in range(len(horizontal_one_width_doors)):
-        for l in range(len(vertical_one_width_doors)):
-            if horizontal_one_width_doors[k].origin[0] == vertical_one_width_doors[l].origin[0] \
-                    and horizontal_one_width_doors[k].origin[1] == vertical_one_width_doors[l].origin[1]:
-                one_width_doors.append(horizontal_one_width_doors[k])
-
-    return horizontal_doors + vertical_doors + one_width_doors
-
-
+# todo: list of available tiles
+#       start tile chosen at random and placed in center
+#       attempt to attach random tiles from list to start tile
+#       doors move to floor once stamped
 def main():
     global floor
     floor.floor_array = create_2d_array(30, 30)
 
-    tile_2 = Tile(tile_array2)
+    # todo: passing around floor like this is a smell. Floor has list of tiles? floor.make_tile?
+    tile_2 = Tile(tile_array2, floor)
     str(tile_2)
 
-    tile_1 = Tile(tile_array1)
+    tile_1 = Tile(tile_array1, floor)
     str(tile_1)
 
-    tile_3 = Tile(tile_array3)
+    tile_3 = Tile(tile_array3, floor)
     str(tile_3)
 
-    tile_4 = Tile(tile_array4)
+    tile_4 = Tile(tile_array4, floor)
     str(tile_4)
 
-    tile_5 = Tile(tile_array5)
+    tile_5 = Tile(tile_array5, floor)
     str(tile_5)
 
     tile_1.stamp((10, 10))
@@ -246,8 +86,7 @@ def main():
 
         while not tile_5.test_attach_doors(tile_1, tile_5.doors[0], tile_1.doors[0]):
             print('rotating')  # todo: flip
-            tile_5.tile_array = rotate(tile_5.tile_array) # todo: move into Tile class
-            tile_5.init_doors()
+            tile_5.rotate()
 
     print('attaching')
     tile_5.attach_doors(tile_1, tile_5.doors[0], tile_1.doors[0])
