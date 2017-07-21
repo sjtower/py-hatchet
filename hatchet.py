@@ -1,3 +1,4 @@
+import copy
 import random
 
 from Tile import Tile
@@ -41,36 +42,31 @@ def main():
         target_tile = random.choice(floor.stamped_tiles)
 
         if tile.can_fit(target_tile):
-            print("Tiles fit. continuing")
-
-            skip = False
-            i = j = rotations = 0
-            while not tile.test_attach_doors(target_tile, tile.doors[i], target_tile.doors[j]):
-                print('rotating')  # todo: flip
-                tile.rotate()
-                rotations += 1
-                if rotations >= 3:
-                    print("tried full 360 rotation - try another door")  # todo: log instead of print
-                    i += 1
-                    rotations = 0
-                    if len(tile.doors) is 1 or i is len(tile.doors) - 1:
-                        print("tried all source doors - try another target door")
-                        i = 0
-                        j += 1
-                        if len(target_tile.doors) is 1 or j is len(target_tile.doors) - 1:
-                            skip = True
-                            print("no tiles could fit - skipping")
-                            break  # should not be possible?
-                            # todo: clean this shit up - shouldn't need indexes just go thru each door list
-
-            if not skip:
-                #  todo: remove placed doors
-                print('attaching')
-                tile.attach_doors(target_tile, tile.doors[i], target_tile.doors[j])
-                pretty_print(floor.floor_array)
+            print("tiles fit - continuing")
+            attach_tile(target_tile, tile)
 
     pretty_print(floor.floor_array)
     print('DONE')
+
+
+# test each door in the source tile against a single target door. If no matches, use another target door and repeat
+def attach_tile(target_tile, tile):
+    random.shuffle(target_tile.doors)
+    random.shuffle(tile.doors)
+
+    for target_door in target_tile.doors:
+        for source_door in tile.doors:
+            for i in range(0, 3):
+                if tile.test_attach_doors(target_tile, source_door, target_door):
+                    print('attaching')
+                    tile.attach_doors(target_tile, source_door, target_door)
+                    # todo: not breaking at this point seems to improve room generation?
+                    # todo: remove placed doors
+                else:
+                    tile.rotate()  # todo: flip
+            print("tried full 360 rotation - try another source door")  # todo: log instead of print
+        print("tried all source doors - try another target door")
+    print("could not match tile - skipping")
 
 
 if __name__ == '__main__':

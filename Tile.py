@@ -5,7 +5,6 @@ import numpy as np
 
 np.set_printoptions(threshold=np.nan, linewidth=np.nan)
 
-from array_helper import pretty_print as pretty_print
 from array_helper import rotate as rotate
 from util import find_doors
 
@@ -86,15 +85,21 @@ class Tile:
         for i in range(0, len(tile_array)):
             for j in range(len(tile_array[0])):
                 # todo: methodize these checks
-                if temp_floor[i + x][j + y] is 3 and tile_array[i][j] is not 3:
-                    print("Test stamp results in unmatched doors. Skipping.")
+                try:
+                    if temp_floor[i + x][j + y] is 3 and tile_array[i][j] is not 3:
+                        print("test stamp results in unmatched doors - skipping")
+                        # pretty_print(temp_floor)
+                        return False
+                    if temp_floor[i + x][j + y] is 1:
+                        temp_floor[i + x][j + y] = 9
+                        print("test stamp results in collision - skipping")
+                        # pretty_print(temp_floor)
+                        return False
+                    temp_floor[i + x][j + y] = tile_array[i][j]
+                except IndexError as e:
+                    print("bad things happened! - skipping")
+                    print(e)
                     return False
-                if temp_floor[i + x][j + y] is 1:
-                    temp_floor[i + x][j + y] = 9
-                    print("Test stamp results in collision. Skipping.")
-                    # pretty_print(temp_floor)
-                    return False
-                temp_floor[i + x][j + y] = tile_array[i][j]
 
         return True
 
